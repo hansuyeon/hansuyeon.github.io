@@ -10,7 +10,6 @@ url                      : https:// 깃허브 계정.github.io
 baseurl                  : # the subpath of your site, e.g. "/blog"
 repository               : 깃허브 계정/깃허브 계정.github.io
 # GitHub username/repo-name e.g. "mmistakes/minimal-mistakes"
-~~~~~~~~~~~~~~~~~~
 # Site Author
 author:
   name             : "내 이름"
