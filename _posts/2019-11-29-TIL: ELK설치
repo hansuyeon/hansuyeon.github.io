@@ -1,0 +1,120 @@
+---
+title: "TIL: ELK 설치"
+date: 2019-11-29 00:00:00 +0900
+categories: TIL Study
+---  
+ELK (Elasticsearch, Logstash, Kibana) stack 설치하기.  
+<환경구성>  
+각 Ubuntu 서버마다 Elasticsearch, Logstash, Kibana 설치.  
+총 3개의 서버 구축.  
+Ubuntu 버전: 18.04.3  
+
+설치 시작하기에 앞서 다운로드 속도를 높이기 위해 아래와 같이 해줌.  
+```bash
+vi /etc/apt/sources.list
+```  
+archive.ubuntu --> ftp.daumkakao 로 치환   :%s/찾을문자열/바꿀문자열  
+```bash
+apt-get update
+```  
+Elasticsearch 7.xx버전부터는 elasticsearch 배보판에 openjdk이 자동 포함되어  
+추가로 JAVA 설치를 안해도 됨. 설치 후 yml 파일에서 환경설정을 해줘야 하는데 우선 기본적인 동작과  
+Kibana 모니터링이 가능하도록 기본적인 설정까지만 진행함. 추후에 더 공부가 필요하다.  
+
+-------------------------------------------------Elasticsearch 설치------------------------------------------------  
+[Elastic 패키지 설치]  
+```bash
+apt-get install gnupg
+wget -qO - https://artifacts.elastic.co/GPG-KEY-elasticsearch | apt-key add -
+echo "deb https://artifacts.elastic.co/packages/7.x/apt stable main" | tee -a /etc/apt/sources.list.d/elastic-7.x.list
+apt-get update
+```  
+[ElasticSearch 환경설정]  
+```bash
+#elasticsearch.yml에서 환경설정
+vi /etc/elasticsearch/elasticsearch.yml
+```
+cluster.name: cluster-1  
+node.name: node-1  
+#localhostIP-> ex)1.1.1.1  
+network.host: "localhostIP"  
+http.port: 9200  
+discovery.seed_hosts: ["host1"]  
+cluster.initial_master_nodes: ["node-1"]  
+xpack.monitoring.enabled: true  
+xpack.monitoring.collection.enabled: true    
+
+[ElasticSearch 서비스 시작하기]
+systemctl start elasticsearch.service
+service elasticsearch status
+
+-------------------------------------------------Kibana 설치------------------------------------------------  
+설치에 앞서서 Elasticsearch 패키지를 설치해줌.  
+[Kibana 설치]
+```bash
+apt install kibana
+```  
+[Kibana 환경설정]   
+```bash
+#kibana.yml에서 환경설정
+vi /etc/kibana/kibana.yml
+```  
+server.port: 5601  
+# localhostIP : kibana localhost IP ex)0.0.0.0  
+server.host: "localhostIP"  
+# localhostIP:port: elasticsearch localhost IP와 포트 ex) "http://1.1.1.1:9200"  
+elasticsearch.hosts: ["localhostIP:port"]  
+elasticsearch.ssl.verificationMode: certificate  
+[kibana 서비스 올리기]
+```bash
+systemctl start kibana.service
+#/usr/share/kibana/bin/kibana --allow-root (나중에 확인~)  
+service kibana start
+```
+---------------------------------------------------Logstash 설치------------------------------------------------  
+logstash 설치를 위해서는 JAVA 를 먼저 설치하고 환경설정 해야됨.  
+[자바 설치]  
+```bash
+apt-get install openjdk-11-jdk
+```  
+[JAVA 환경 변수 설정]  
+```bash
+# 설치된 jvm 위치 먼저 확인하고
+find / -name jvm
+# JAVA 경로 설정을 위해 /etc/profile.d 수정
+vi /etc/profile.d/java.sh 
+```
+JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64  
+CLASSPATH=$JAVA_HOME/lib/tools.jar  
+PATH=$PATH:$JAVA_HOME/bin  
+export JAVA_HOME CLASSPATH PATH  
+[logstash 설치]  
+# 여기 역시 elastic 패키지 먼저 설치 진행!
+```bash
+sudo apt-get update && sudo apt-get install logstash
+```  
+[logstash 환경설정]   
+```bash
+# logstash.yml 설정
+vi /etc/logstash/logstash.yml
+```
+xpack.monitoring.enabled: true  
+xpack.monitoring.elasticsearch.hosts: ["http://163.152.7.82:9200"] <-elasticsearch IP, port  
+xpack.monitoring.collection.pipeline.details.enabled: true  
+```bash
+# pipelines.yml 설정
+vi /etc/logstash/pipelines.yml
+```
+- pipeline.id: main  
+  path.config: "/etc/logstash/conf.d/*.conf"  
+  queue.type: persisted  
+
+[logstash 실행] 
+```bash
+# 특정 conf 파일을 실행시킬 경우 
+/usr/share/logstash/bin/logstash -f logstash-demos/conf.d/hello.conf
+# 설정한 pipeline에 기반해서 실행시킬 경우
+/usr/share/logstash/bin/logstash
+```
+# logstash 실행 시 환경설정 파일 path를 못찾아서 /usr/share/logstash/config/ 디렉토리로 이동  
+# /etc/logstash/ -> /usr/share/logstash/config/  
