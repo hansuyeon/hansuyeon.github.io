@@ -1,0 +1,92 @@
+---
+title: "TIL: TIKA 라이브러리 사용 중 한국어 파일 이름 오류 수정하기"
+date: 2019-12-02 17:20:00 +0900
+categories: TIL Study
+---
+
+Python 기반으로 TIKA 라이브러리를 이용해 다양한 파일의 text를 추출한 후에  
+Metadata와 Contents로 파싱하고 logstash를 통해 elasticsearch로 전송하는 부분까지 완료.  
+테스트를 끝냈으니까 이제 본격적으로 예전에 작성했던 문서파일들을 입력으로 파이썬 코드를  
+실행시키는데 오류가 발생함.  
+
+```bash
+File "tika_json.py", line 34, in <module>
+    parsed = parser.from_file(input_file)
+  File "/usr/local/lib/python3.6/dist-packages/tika/parser.py", line 36, in from_file
+    jsonOutput = parse1('all', filename, serverEndpoint, headers=headers, config_path=config_path, requestOptions=requestOptions)
+  File "/usr/local/lib/python3.6/dist-packages/tika/tika.py", line 329, in parse1
+    headers, verbose, tikaServerJar, config_path=config_path, rawResponse=rawResponse, requestOptions=requestOptions)
+  File "/usr/local/lib/python3.6/dist-packages/tika/tika.py", line 545, in callServer
+    resp = verbFn(serviceUrl, encodedData, **effectiveRequestOptions)
+  File "/usr/lib/python3/dist-packages/requests/api.py", line 126, in put
+    return request('put', url, data=data, **kwargs)
+  File "/usr/lib/python3/dist-packages/requests/api.py", line 58, in request
+    return session.request(method=method, url=url, **kwargs)
+  File "/usr/lib/python3/dist-packages/requests/sessions.py", line 520, in request
+    resp = self.send(prep, **send_kwargs)
+  File "/usr/lib/python3/dist-packages/requests/sessions.py", line 630, in send
+    r = adapter.send(request, **kwargs)
+  File "/usr/lib/python3/dist-packages/requests/adapters.py", line 440, in send
+    timeout=timeout
+  File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 601, in urlopen
+    chunked=chunked)
+  File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 357, in _make_request
+    conn.request(method, url, **httplib_request_kw)
+  File "/usr/lib/python3.6/http/client.py", line 1254, in request
+    self._send_request(method, url, body, headers, encode_chunked)
+  File "/usr/lib/python3.6/http/client.py", line 1295, in _send_request
+    self.putheader(hdr, value)
+  File "/usr/lib/python3.6/http/client.py", line 1227, in putheader
+    values[i] = one_value.encode('latin-1')
+```
+에러를 읽어보니까 뭔지는 잘 모르겠지만 TIKA 서버로 http 전송을 할때, utf-8로 인코딩이 안되고 있다는 내용인듯...?  
+확실하지는 않았지만 TIKA 라이브러리 단까지를 마지노선으로 수정해보기로 함.  
+위에 에러메세지에 써있는 tika.py에 들어가서 수정을 해보자!  
+```bash
+vi /usr/local/lib/python3.6/dist-packages/tika/tika.py
+
+def parse1(option, urlOrPath, serverEndpoint=ServerEndpoint, verbose=Verbose, tikaServerJar=TikaServerJar,
+          responseMimeType='application/json',
+          services={'meta': '/meta', 'text': '/tika', 'all': '/rmeta/text'}, rawResponse=False, headers=None, config_path=None, requestOptions={}):
+    '''
+    Parse the object and return extracted metadata and/or text in JSON format.
+    :param option:
+    :param urlOrPath:
+    :param serverEndpoint:
+    :param verbose:
+    :param tikaServerJar:
+    :param responseMimeType:
+    :param services:
+    :param rawResponse:
+    :param headers:
+    :return:
+    '''
+    headers = headers or {}
+
+    path, file_type = getRemoteFile(urlOrPath, TikaFilesPath)
+    print("######################################################################111")
+    headers.update({'Accept': responseMimeType,
+                    'Content-Disposition': make_content_disposition_header(path.encode('utf-8')
+                    if type(path) is unicode_string
+                    else path)})
+    print("######################################################################222")
+    if option not in services: log.warning('config option must be one of meta, text, or all; using all.')
+    service = services.get(option, services['all'])
+
+    print("######################################################################333")
+    if service == '/tika': responseMimeType = 'text/plain'
+    headers.update({'Accept': responseMimeType, 'Content-Disposition': make_content_disposition_header(path.encode('utf-8')
+                     if type(path) is unicode_string else path)})
+    print("######################################################################444")
+    status, response = callServer('put', serverEndpoint, service, open(path, 'rb'),
+                                  headers, verbose, tikaServerJar, config_path=config_path, rawResponse=rawResponse, requestOptions=requestOptions)
+    print("######################################################################555")
+    if file_type == 'remote': os.unlink(path)
+    return (status, response)
+```
+print문으로 어디가 문제인지 살펴보니까 3번째 프린트문까지는 출력이 되지만 4번째가 찍히기 전에 에러 발생함.  
+첫번째 프린트문을 참고해서 수정했음!  
+결국 원하는 결과가 잘 나오기는 하는데 코드의 내용을 완벽히 이해하지는 못해서 찝찝함.  
+더 공부해봐야겠당  
+
+    
