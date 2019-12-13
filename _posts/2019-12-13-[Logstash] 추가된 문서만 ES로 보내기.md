@@ -52,6 +52,7 @@ stat_interval => "1 second"
 sincedb_write_interval => "15 seconds"  
 처리 중인 offset을 얼마의 주기로 sincedb에 기록할지 (default: 15초). 중복 유입에 관련된 설정  
   
+# 추가 이슈
 아무튼 start-position을 end로 해줬더니 추가된 문서만 Elasticsearch에 잘 저장됨!
 근데 여기서 또 문제 발생ㅠㅠ  
 logstash를 실행시킨 후에 새로운 doc를 넣으면 걔만 잘 저장되는데,  
