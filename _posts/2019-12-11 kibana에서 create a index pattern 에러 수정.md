@@ -15,4 +15,4 @@ categories: Error
 curl -XPUT -H "Content-Type: application/json" https://[YOUR_ELASTICSEARCH_ENDPOINT]:9200/_all/_settings -d '{"index.blocks.read_only_allow_delete": null}'
 ```
 정확한 의미를 모르지만 수정을 하긴 했다 깔깔  
-[이 블로그] :https://blog.mimimi.fun/ki/
+[이 블로그]: https://blog.mimimi.fun/ki/
