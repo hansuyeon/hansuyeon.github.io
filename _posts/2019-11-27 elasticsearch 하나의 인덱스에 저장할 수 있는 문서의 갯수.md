@@ -1,7 +1,7 @@
 ---
-title: "Elasticsearch의 인덱스 하나 당 저장할 수 있는 문서의 갯수"
-date: 2019-12-12 17:53:00 +0900
-categories: TIL Study
+Title: "Elasticsearch의 인덱스 하나 당 저장할 수 있는 문서의 갯수"
+Date: 2019-12-12 17:53:00 +0900
+Categories: TIL Study
 ---
 
 # Elasticserach의 인덱스 하나 당 저장할 수 있는 문서의 최대 갯수는??  
