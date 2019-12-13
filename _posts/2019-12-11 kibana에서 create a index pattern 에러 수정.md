@@ -1,5 +1,5 @@
 ---
-Title: "Kibana "create a index pattern" 에러 수정"
+Title: "Kibana create a index pattern 에러 수정"
 date: 2019-12-11 16:00:00 +0900
 categories: Error
 ---
