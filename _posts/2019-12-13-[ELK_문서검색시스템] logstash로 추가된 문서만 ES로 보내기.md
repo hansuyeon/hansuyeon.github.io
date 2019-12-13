@@ -1,5 +1,5 @@
 ---
-Title : "[ELK_문서검색시스템] 추가된 문서만 Elasticsearch로 보내기"
+Title : "[ELK_문서검색시스템] logstash로 추가된 문서만 Elasticsearch로 보내기"
 Date : "2019-12-13"
 Categorization :
 ---
