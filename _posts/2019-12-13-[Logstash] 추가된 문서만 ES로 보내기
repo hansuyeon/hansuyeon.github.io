@@ -1,0 +1,27 @@
+
+```bash
+# logstash 어쩌구.conf 파일 설정
+input{
+ file{
+  path => "보낼 파일 path"
+  #start_position은 logstash를 시작할 때 file의 어느 부분부터 읽을지를 결정하는 설정. file을 최초 읽을 때만 적용
+  start_position => "end"  
+  #logstash가 처음 시작될 때는 start_position 옵션에 따라서 결정되고, 그 이후로는 sincedb에 저장된 offset부터 읽기 시작함.
+  sincedb_path => "/var/lib/logstash/plugins/inputs/file/.sincedb_d95dab0ed656526494a9672a508c1315"
+  #파일 갱신 확인 주기 (default:1초)
+  stat_interval => ""
+  #처리 중인 offset을 얼마의 주기로 sincedb에 기록할지 (default: 15초). 중복 유입에 관련된 설정
+  sincedb_write_interval => ""
+```
+근데 여기서 문제가 있음. logstash 를 실행시킨 상태에서 .conf 파일에 설정해 둔 폴더 안으로 문서가 추가되면
+딱 추가된 문서만 es에 업로드되는데,
+logstash를 껐다가 다시 키면 .conf파일 안의 모든 문서가 es로 한번 다시 업로드 됨.....
+이때 추가된 문서의 _id 값은 또 달라서 같은 문서인데 다른 _id로 es에 추가 저장이 된댜 흑흑 
+원래 이런걸까? 중복되지 않도록 하는 방법은 없으려나 
+=> 이거 start-position 을 end로 해주면됨!!! 근데 end로 해주면 데이터 손실의 여지가 있다는데.....흠 찾아보자
+
+start-position을 end로 해줬더니 추가된 문서만 es에 잘 저장됨!
+근데 여기서 또 문제 발생...
+logstash를 실행시킨 후에 새로운 doc를 넣으면 걔만 잘 저장되는데,
+새로운 doc를 폴더에 먼저 넣고 logstash를 키면 미리 넣어둔 새 doc는 es에 저장이 안됨....반응이 없다
+sincedb 열어봐도 변화가 없음..
